@@ -33,3 +33,42 @@ This introduces more files and some additional architectural structure. However,
 ### Verification
 
 The architecture is supported by tests covering the YouTube client, TrendRadar service behaviour and FastAPI endpoints.
+
+
+
+
+## DD-002: Separate Popularity from Trend Growth
+
+**Status:** Accepted
+
+### Context
+A video's total views indicate accumulated popularity, but do not independently establish whether its topic is growing.
+
+A video with a large number of views may be old, while a newer video may have accumulated views more quickly.
+
+### Decision
+TrendRadar will distinguish three concepts:
+
+1. Popularity: public metrics such as views, likes and comments.
+2. Performance indicators: average views per day since publication and engagement rate.
+3. Trend growth: changes in performance across historical observations.
+
+The first release will calculate popularity and performance indicators from available public data. Trend growth will require historical snapshots and will not be claimed from a single API response.
+
+### Metric definitions
+
+- Average views per day = total views / elapsed days since publication.
+- Engagement rate (%) = ((likes + comments) / views) * 100.
+
+If the required data is missing, invalid or insufficient, the relevant metric will be null rather than fabricated.
+
+### Consequences
+- Users can distinguish accumulated popularity from average historical performance.
+- Metrics remain explainable and testable.
+- Historical data collection will be required before making trend-growth claims.
+
+### Limitations
+Average views per day is a lifetime average, not current daily view velocity. Engagement rates may not be comparable across all video formats, audiences or publication ages.
+
+### Verification
+Unit tests will cover valid calculations, missing metrics, zero views, invalid publication dates and future publication dates.

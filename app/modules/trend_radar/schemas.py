@@ -7,10 +7,12 @@ class VideoTrend(BaseModel):
     title: str
     channel_title: str
     published_at: str | None = None
-
     country_code: str
     video_url: str
-
     view_count: int | None = None
     like_count: int | None = None
     comment_count: int | None = None
+
+    # Derived performance indicators
+    average_views_per_day: float | None = None
+    engagement_rate: float | None = None
