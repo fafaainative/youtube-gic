@@ -118,3 +118,85 @@ Scores are relative to the retrieved sample and can change when the sample chang
 Unit tests cover normalisation, ties, missing metrics, score bounds, freshness decay and ranking order.
 
 
+## DD-004: Historical Trend Tracking with SQLite
+
+**Status:** Accepted
+
+### Context
+TrendRadar currently retrieves public video metrics as a single observation. A single observation cannot establish whether video performance is accelerating or declining.
+
+### Decision
+TrendRadar will persist periodic observations of video metrics using SQLite.
+
+Each observation records:
+- Video ID
+- Observation timestamp
+- Region
+- Video title
+- Channel title
+- Publication timestamp
+- Views
+- Likes
+- Comments
+
+TrendRadar will compare the latest observation against the previous observation for the same video.
+
+### Derived metrics
+- View delta: current views minus previous views.
+- Views per day between observations: view delta divided by elapsed time in days.
+- View growth percentage: view delta divided by previous views, multiplied by 100.
+
+### Data integrity
+- Observations are immutable historical records.
+- A video may have multiple observations.
+- Historical observations must not be overwritten when new observations arrive.
+- A video with no previous observation will have no historical growth metrics.
+- A zero previous view count prevents percentage growth calculation.
+
+### Storage
+SQLite is selected for the MVP because it is included in Python's standard library and supports local persistent storage.
+
+### Limitations
+Historical metrics depend on how frequently TrendRadar captures data. A single observation does not provide historical growth. Growth between observations is not equivalent to real-time velocity.
+
+### Verification
+Tests will cover persistence, previous observation retrieval, growth calculations, missing history, zero views and time intervals.
+
+
+
+## DD-005: Historical Trend Analysis
+
+**Status:** Accepted
+
+### Context
+TrendRadar stores video observations over time. Historical records allow us to measure changes in views rather than relying exclusively on cumulative totals.
+
+### Decision
+A separate trend-analysis module will calculate historical performance metrics using the current observation and previous observations.
+
+### Metrics
+- Views delta = current views minus previous views.
+- Interval views/day = views delta divided by elapsed interval days.
+- Growth percentage = views delta divided by previous views, multiplied by 100.
+- Acceleration = current interval views/day minus previous interval views/day.
+
+### Trend classifications
+- new: insufficient historical observations.
+- growing: views increased.
+- stable: views remained unchanged.
+- declining: views decreased.
+- accelerating: interval views/day increased compared with the preceding interval.
+- decelerating: interval views/day decreased compared with the preceding interval.
+
+### Data integrity
+- Missing observations produce unavailable metrics.
+- Zero previous views prevent percentage-growth calculation.
+- Negative view deltas are preserved instead of silently discarded.
+- Observations with zero or negative elapsed time cannot produce interval velocity.
+- Acceleration requires at least three observations.
+
+### Limitations
+The engine measures changes between recorded snapshots, not real-time performance. Sampling frequency affects interpretation.
+
+### Verification
+Unit tests cover missing history, positive and negative view changes, zero views, elapsed-time calculations, stable performance, acceleration and deceleration.
