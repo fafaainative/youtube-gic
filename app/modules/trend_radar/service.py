@@ -8,6 +8,9 @@ from app.modules.trend_radar.metrics import (
 )
 from app.modules.trend_radar.schemas import VideoTrend
 
+from app.modules.trend_radar.ranking import (
+    calculate_research_priority_scores,
+)
 
 def safe_integer(value):
     """Convert a value to an integer without crashing."""
@@ -84,4 +87,7 @@ def get_country_trends(
 
         trends.append(trend)
 
-    return trends
+    return calculate_research_priority_scores(
+    videos=trends,
+    as_of=as_of,
+    )

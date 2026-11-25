@@ -72,3 +72,49 @@ Average views per day is a lifetime average, not current daily view velocity. En
 
 ### Verification
 Unit tests will cover valid calculations, missing metrics, zero views, invalid publication dates and future publication dates.
+
+
+
+
+
+## DD-003: Research Priority Scoring
+
+**Status:** Accepted — Initial scoring model
+
+### Context
+TrendRadar retrieves multiple popular videos. Ranking by total views alone may prioritise older videos and overlook newer videos with strong average performance and engagement.
+
+### Decision
+TrendRadar will use a transparent Research Priority Score (RPS) to help users prioritise videos for further research.
+
+### Initial weights
+- Average views per day: 40%
+- Engagement rate: 30%
+- Freshness: 20%
+- Total views: 10%
+
+### Scoring
+Performance and engagement metrics are normalised relative to the retrieved video sample using min-max scaling.
+
+Freshness uses an exponential decay with a 30-day half-life.
+
+Popularity uses relative total-view counts.
+
+The final score ranges from 0 to 100. Missing metrics are excluded and the remaining weights are proportionally adjusted.
+
+### Interpretation
+RPS is a research prioritisation score. It is not a viral probability, niche-demand measurement, monetisation prediction or YouTube algorithm score.
+
+Scores are relative to the retrieved sample and can change when the sample changes.
+
+### Limitations
+- The API's popular-video results are not a complete representation of all videos in a niche.
+- A sample-relative score cannot establish market demand.
+- Average views per day is not current view velocity.
+- Engagement varies across formats, audiences and publication ages.
+- The initial weights require future validation.
+
+### Verification
+Unit tests cover normalisation, ties, missing metrics, score bounds, freshness decay and ranking order.
+
+

@@ -13,6 +13,9 @@ class VideoTrend(BaseModel):
     like_count: int | None = None
     comment_count: int | None = None
 
-    # Derived performance indicators
     average_views_per_day: float | None = None
     engagement_rate: float | None = None
+
+    # Research ranking
+    research_priority_score: float | None = None
+    score_breakdown: dict[str, float | None] | None = None
