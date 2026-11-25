@@ -1,4 +1,3 @@
-
 from datetime import datetime
 
 from app.integrations.youtube_client import YouTubeDataClient
@@ -6,11 +5,14 @@ from app.modules.trend_radar.metrics import (
     calculate_average_views_per_day,
     calculate_engagement_rate,
 )
-from app.modules.trend_radar.schemas import VideoTrend
-
 from app.modules.trend_radar.ranking import (
     calculate_research_priority_scores,
 )
+from app.modules.trend_radar.schemas import VideoTrend
+from app.modules.trend_radar.tracking_service import (
+    TrendTrackingService,
+)
+
 
 def safe_integer(value):
     """Convert a value to an integer without crashing."""
@@ -30,6 +32,7 @@ def get_country_trends(
     limit: int = 10,
     category_id: str | None = None,
     as_of: datetime | None = None,
+    tracking_service: TrendTrackingService | None = None,
 ) -> list[VideoTrend]:
     """
     Retrieve popular videos and convert them into
@@ -87,7 +90,18 @@ def get_country_trends(
 
         trends.append(trend)
 
-    return calculate_research_priority_scores(
-    videos=trends,
-    as_of=as_of,
+    ranked_trends = calculate_research_priority_scores(
+        videos=trends,
+        as_of=as_of,
     )
+
+    if tracking_service is not None:
+        for video in ranked_trends:
+            historical_metrics = (
+                tracking_service.record_and_analyse(video)
+            )
+
+            for field, value in historical_metrics.items():
+                setattr(video, field, value)
+
+    return ranked_trends

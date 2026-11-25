@@ -28,3 +28,15 @@ class TrendTrackingService:
         )
 
         return analyze_video_trend(snapshots)
+
+    def record_and_analyse(self, video, observed_at=None):
+        """
+        Record a new observation, then analyse its history.
+        """
+
+        self.record_observation(
+            video=video,
+            observed_at=observed_at,
+        )
+
+        return self.analyse_video(video.video_id)

@@ -200,3 +200,35 @@ The engine measures changes between recorded snapshots, not real-time performanc
 
 ### Verification
 Unit tests cover missing history, positive and negative view changes, zero views, elapsed-time calculations, stable performance, acceleration and deceleration.
+
+
+============================================================================================================================================== 
+
+## DD-006: API-Triggered Snapshot Collection
+
+**Status:** Accepted — MVP
+
+### Context
+The historical trend tracking engine can save and analyse observations, but it is not yet connected to the TrendRadar API workflow.
+
+### Decision
+When TrendRadar retrieves country-specific popular videos successfully, it will record a historical observation for each returned video.
+
+The API will enrich each video with its historical trend metrics when previous observations are available.
+
+### Collection trigger
+Snapshots are recorded when a successful country-trends API request retrieves video data.
+
+### Consequences
+- Historical collection begins through API usage.
+- Users can receive trend metrics without manually recording observations.
+- Repeated requests can generate additional snapshots.
+- Data collection frequency depends on user requests.
+
+### Limitations
+This is not continuous monitoring.
+No snapshot is collected when the API is not requested.
+Trend calculations are only as reliable as the observation intervals and collected history.
+
+### Future improvement
+Introduce scheduled collection and configurable observation frequency.

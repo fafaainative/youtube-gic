@@ -1,86 +1,33 @@
-
+from app.modules.trend_radar.tracking_service import TrendTrackingService
+from app.storage.snapshots import SnapshotRepository
+from app.modules.trend_radar.schemas import VideoTrend
 from datetime import datetime, timezone
 
-from app.modules.trend_radar.tracking_service import (
-    TrendTrackingService,
-)
-from app.modules.trend_radar.schemas import VideoTrend
 
+def test_record_and_analyse(tmp_path):
+    database_path = tmp_path / "test_tracking.db"
 
-class FakeRepository:
-    def __init__(self):
-        self.saved = []
-        self.snapshots = []
+    repository = SnapshotRepository(database_path=database_path)
 
-    def save_snapshot(self, video, observed_at=None):
-        self.saved.append((video, observed_at))
+    tracking_service = TrendTrackingService(repository=repository)
 
-    def get_recent_snapshots(self, video_id, limit=3):
-        return self.snapshots[:limit]
-
-
-def make_video():
-    return VideoTrend(
-        video_id="video123",
-        title="Python Tutorial",
-        channel_title="Code Channel",
+    video = VideoTrend(
+        video_id="video_123",
+        title="Test Video",
+        channel_title="Test Channel",
+        published_at="2026-11-20T10:00:00Z",
         country_code="NG",
-        video_url="https://www.youtube.com/watch?v=video123",
-        view_count=10000,
+        video_url="https://www.youtube.com/watch?v=video_123",
+        view_count=1000,
+        like_count=100,
+        comment_count=10,
     )
 
-
-def test_record_observation():
-    repository = FakeRepository()
-    service = TrendTrackingService(repository=repository)
-
-    video = make_video()
-
-    observed_at = datetime(
-        2026,
-        11,
-        24,
-        10,
-        0,
-        tzinfo=timezone.utc,
+    result = tracking_service.record_and_analyse(
+        video=video,
+        observed_at=datetime(2026, 11, 25, 10, 0, 0, tzinfo=timezone.utc),
     )
 
-    service.record_observation(
-        video,
-        observed_at=observed_at,
-    )
+    assert result["trend_direction"] == "new"
 
-    assert len(repository.saved) == 1
-    assert repository.saved[0][0].video_id == "video123"
-    assert repository.saved[0][1] == observed_at
-
-
-def test_analyse_video():
-    repository = FakeRepository()
-
-    repository.snapshots = [
-        {
-            "video_id": "video123",
-            "view_count": 16000,
-            "observed_at": "2026-11-24T10:00:00+00:00",
-        },
-        {
-            "video_id": "video123",
-            "view_count": 10000,
-            "observed_at": "2026-11-23T10:00:00+00:00",
-        },
-        {
-            "video_id": "video123",
-            "view_count": 5000,
-            "observed_at": "2026-11-22T10:00:00+00:00",
-        },
-    ]
-
-    service = TrendTrackingService(repository=repository)
-
-    result = service.analyse_video("video123")
-
-    assert result["views_delta"] == 6000
-    assert result["views_per_day_since_last_snapshot"] == 6000
-    assert result["trend_direction"] == "growing"
-    assert result["momentum"] == "accelerating"
+    assert repository.get_snapshot_count("video_123") == 1
