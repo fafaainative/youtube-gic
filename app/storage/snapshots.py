@@ -20,7 +20,7 @@ class SnapshotRepository:
 
         self._initialize_database()
 
-    def _connect(self):
+    def _connect(self): 
         return sqlite3.connect(self.database_path)
 
     def _initialize_database(self):

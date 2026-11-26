@@ -232,3 +232,51 @@ Trend calculations are only as reliable as the observation intervals and collect
 
 ### Future improvement
 Introduce scheduled collection and configurable observation frequency.
+
+=============================================================================================================================================
+
+## DD-007: Snapshot Collection Cooldown
+
+**Status:** Implemented — verified by automated tests
+
+### Context
+
+Trend observations are collected when the Trends API is requested. Repeated requests within short periods could generate unnecessary snapshots and result in unreliable historical trend calculations.
+
+### Decision
+
+A configurable minimum collection interval is applied per video.
+
+Initial default:
+
+- 60 minutes
+
+The decision is implemented in `TrendTrackingService` because it is collection policy, not persistence and not an API-routing concern. The SQLite repository remains responsible only for storing and retrieving observations.
+
+### Rules
+
+- Videos without historical observations are recorded immediately.
+- Observations inside the cooldown period are not recorded.
+- Observations at or after the cooldown boundary are recorded.
+- Existing observations are preserved and are never overwritten.
+- Historical analysis continues using available snapshots, even when a new snapshot is skipped.
+- Out-of-order observations are rejected safely. An observation timestamp equal to or earlier than the latest stored observation is not recorded.
+- Timestamps are normalised to UTC. `Z`, `+00:00` and naive timestamps are handled without timezone comparison errors. Naive timestamps are treated as UTC, matching the existing repository convention.
+
+### Consequences
+
+- Repeated API requests no longer create redundant historical records for the same video.
+- Historical analysis protects existing observations from misleading out-of-order data.
+- Snapshot frequency is controlled by the tracking service rather than by callers or the database layer.
+
+### Configuration
+
+`TrendTrackingService` accepts an optional `min_collection_interval` as a `datetime.timedelta`. The default is `timedelta(minutes=60)`.
+
+### Limitations
+
+Snapshots remain triggered by API requests. This feature does not introduce a scheduler or automatic background monitoring.
+
+### Verification
+
+Tests cover first observations, cooldown protection, the 60-minute boundary, longer intervals, configurable intervals, preserved history, out-of-order timestamps, timezone formats, naive timestamps and continued historical analysis when recording is skipped. An API-level test also verifies repeated requests against a real temporary SQLite repository.
